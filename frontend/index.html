@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🎮 Virtual Inventory</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border-bottom: 2px solid #e94560;
+      padding: 24px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      color: #e94560;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .owner-badge {
+      background: #16213e;
+      border: 1px solid #e94560;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 0.85rem;
+      color: #a0a8c0;
+      text-align: right;
+    }
+
+    .owner-badge span {
+      display: block;
+      color: #ffffff;
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      flex: 1;
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 10px;
+      padding: 16px 20px;
+      text-align: center;
+    }
+
+    .stat-card .label {
+      font-size: 0.75rem;
+      color: #778;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-card .value {
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: #e94560;
+      margin-top: 4px;
+    }
+
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .item-card {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 12px;
+      padding: 20px;
+      transition: border-color 0.2s, transform 0.2s;
+      cursor: default;
+    }
+
+    .item-card:hover {
+      border-color: #e94560;
+      transform: translateY(-3px);
+    }
+
+    .item-card .item-icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    .item-card .item-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #c0c8e0;
+      line-height: 1.4;
+    }
+
+    .item-card .item-rarity {
+      font-size: 0.75rem;
+      color: #e94560;
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .add-section {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 12px;
+      padding: 28px;
+    }
+
+    .add-section h3 {
+      color: #e94560;
+      margin-bottom: 16px;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .add-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .add-row input {
+      flex: 1;
+      background: #0f0f1a;
+      border: 1px solid #0f3460;
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #e0e0e0;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .add-row input:focus {
+      border-color: #e94560;
+    }
+
+    .add-row button {
+      background: #e94560;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .add-row button:hover {
+      background: #c73652;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: #e94560;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .toast.show { opacity: 1; }
+
+    .loading { color: #556; font-style: italic; text-align: center; padding: 40px; }
+
+    footer {
+      text-align: center;
+      color: #334;
+      font-size: 0.8rem;
+      padding: 30px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🎮 Virtual Inventory</h1>
+    <div class="owner-badge">
+      <span id="owner-name">Memuat...</span>
+      <span id="owner-nim">NIM: ...</span>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="label">Total Items</div>
+        <div class="value" id="total-items">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Inventory</div>
+        <div class="value" id="catalog-title">...</div>
+      </div>
+    </div>
+
+    <div class="inventory-grid" id="inventory-grid">
+      <div class="loading">Memuat inventory...</div>
+    </div>
+
+    <div class="add-section">
+      <h3>+ Tambah Item ke Inventory</h3>
+      <div class="add-row">
+        <input type="text" id="item-input" placeholder="Contoh: M4A1-S | Hyper Beast (FT)" />
+        <button onclick="addItem()">Add Item</button>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>Virtual Inventory App &mdash; Cloud Containerization Praktikum</footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API_URL = '/api';
+
+    const icons = ['⚔️','🔫','🛡️','💎','🗡️','🏹','💣','🔮','🎯','🧪','🪄','🔑'];
+
+    function getIcon(index) {
+      return icons[index % icons.length];
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    function renderItems(items) {
+      const grid = document.getElementById('inventory-grid');
+      grid.innerHTML = '';
+      if (!items.length) {
+        grid.innerHTML = '<div class="loading">Inventory kosong.</div>';
+        return;
+      }
+      items.forEach((item, i) => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.innerHTML = `
+          <div class="item-icon">${getIcon(i)}</div>
+          <div class="item-name">${item}</div>
+          <div class="item-rarity">Item #${String(i + 1).padStart(3, '0')}</div>
+        `;
+        grid.appendChild(card);
+      });
+      document.getElementById('total-items').textContent = items.length;
+    }
+
+    function loadData() {
+      fetch(`${API_URL}/info`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('owner-name').textContent = data.pemilik;
+          document.getElementById('owner-nim').textContent = 'NIM: ' + data.nim;
+          document.getElementById('catalog-title').textContent = data.judul_katalog;
+          renderItems(data.items);
+        })
+        .catch(() => {
+          document.getElementById('inventory-grid').innerHTML =
+            '<div class="loading">Gagal memuat data. Cek koneksi API.</div>';
+        });
+    }
+
+    function addItem() {
+      const input = document.getElementById('item-input');
+      const val = input.value.trim();
+      if (!val) return;
+
+      fetch(`${API_URL}/add-item`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item: val })
+      })
+        .then(res => res.json())
+        .then(data => {
+          input.value = '';
+          renderItems(data.items);
+          showToast('Item berhasil ditambahkan!');
+        });
+    }
+
+    document.getElementById('item-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') addItem();
+    });
+
+    loadData();
+  </script>
+
+</body>
+</html>
